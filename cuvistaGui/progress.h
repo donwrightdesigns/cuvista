@@ -29,6 +29,7 @@ class ProgressWindow : public QMainWindow {
 
 private:
     Ui::ProgressWindow ui;
+    bool mStopClicked = false;
 
 signals:
     void cancel();
@@ -42,6 +43,7 @@ public slots:
     void updateInput(QImage pm, QString time);
     void updateOutput(QImage pm, QString time);
     void updateStatus(QString msg);
+    void stopProcessing();
 
 public:
     ProgressWindow(QWidget* parent);

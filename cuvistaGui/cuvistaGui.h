@@ -44,7 +44,10 @@ public:
 public slots:
     void seek(double frac);
     void stabilize();
+    void processNextFile();
     void done();
+>>>>>>>
+    QQueue<QString> mFileQueue;
     void showInfo();
     void resetGui();
     void showStatusMessage(const std::string& msg);

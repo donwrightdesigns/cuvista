@@ -27,7 +27,12 @@ ProgressWindow::ProgressWindow(QWidget* parent) :
 	ui.setupUi(this);
 	resize(minimumSize());
 	setWindowModality(Qt::ApplicationModal);
-	connect(ui.btnStop, &QPushButton::clicked, this, &ProgressWindow::close); //connect button to close signal
+	connect(ui.btnStop, &QPushButton::clicked, this, &ProgressWindow::stopProcessing);
+}
+
+void ProgressWindow::stopProcessing() {
+	mStopClicked = true;
+	this->close();
 }
 
 void ProgressWindow::changeEvent(QEvent* event) {
@@ -37,14 +42,20 @@ void ProgressWindow::changeEvent(QEvent* event) {
 }
 
 void ProgressWindow::showEvent(QShowEvent* event) {
+	mStopClicked = false;
 	ui.btnStop->setEnabled(true);
 	ui.progressBar->reset();
 }
 
 void ProgressWindow::closeEvent(QCloseEvent* event) {
-	ui.btnStop->setEnabled(false);
-	event->ignore(); //hide only after output is terminated in main window
-	cancel();
+	if (mStopClicked) {
+		ui.btnStop->setEnabled(false);
+		event->ignore(); //hide only after output is terminated in main window
+		cancel();
+	} else {
+		event->ignore(); //ignoring the close event so we just hide the window, not shutdown
+		this->hide();
+	}
 }
 
 void ProgressWindow::progress(double value) {

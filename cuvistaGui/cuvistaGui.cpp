@@ -204,8 +204,10 @@ cuvistaGui::cuvistaGui(QWidget *parent) :
 
     //file for reading
     auto fcnOpenFile = [&] () {
-        QString str = QFileDialog::getOpenFileName(this, QString("Select Video file to open"), mInputDir, "All Files (*.*)");
-        addInputFile(str);
+        QStringList files = QFileDialog::getOpenFileNames(this, QString("Select Video files to open"), mInputDir, "All Files (*.*)");
+        for (const QString& str : files) {
+            addInputFile(str);
+        }
     };
     connect(ui.btnOpen, &QPushButton::clicked, this, fcnOpenFile);
 
@@ -353,15 +355,29 @@ void cuvistaGui::updateInputImage() {
     ui.imageInput->setImage(mInputImage);
 }
 
-//-------------------------
-// begin stabilization
-//-------------------------
-
 void cuvistaGui::stabilize() {
+    // Collect all inputs from combo box list as queue if empty
+    if (mFileQueue.isEmpty()) {
+        for (int i = 0; i < ui.comboInputFile->count(); i++) {
+            mFileQueue.enqueue(ui.comboInputFile->itemText(i));
+        }
+    }
+    processNextFile();
+}
+
+void cuvistaGui::processNextFile() {
+    if (mFileQueue.isEmpty()) return;
+
+    QString nextFile = mFileQueue.dequeue();
+    setInputFile(nextFile);
+
     ui.labelStatus->setText("");
     
     //check if input is present
     if (mFileInput.fileName().isEmpty() || mInputReady == false) {
+>>>>>>>
+        return; //nothing to do
+    }
         return; //nothing to do
     }
 
@@ -540,6 +556,7 @@ void cuvistaGui::done() {
 
     } else if (mInputHandler.mIsCancelled) {
         ui.labelStatus->setText("Operation was cancelled");
+        mFileQueue.clear();
 
     } else {
         mProgressWindow->hide();
@@ -550,6 +567,11 @@ void cuvistaGui::done() {
         QString str = qformat(" ({}) written in {:.1f} min at {:.1f} fps", fileSize, secs / 60.0, fps);
         QString labelText = QString("<a href='%1'>%2</a> %3").arg(file).arg(fileElided).arg(str);
         ui.labelStatus->setText(labelText);
+        
+        // Trigger next if queue exists
+        if (!mFileQueue.isEmpty()) {
+            QTimer::singleShot(100, this, &cuvistaGui::processNextFile);
+        }
     }
 }
 
